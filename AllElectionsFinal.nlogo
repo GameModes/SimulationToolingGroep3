@@ -100,9 +100,10 @@ to-report get-rivals
   set rivals_list []
   set electionslist countpointelections
   set rivalspoints_list add_to_list rivalspoints_list max electionslist
-  set electionslist remove max electionslist electionslist
+  set electionslist remove-item (position max electionslist electionslist) electionslist
   set rivalspoints_list add_to_list rivalspoints_list max electionslist
   set electionslist countpointelections
+
   foreach rivalspoints_list [x -> set rivals_list add_to_list rivals_list item (position x electionslist) chosencolorlist ]
   report rivals_list
 end
@@ -116,12 +117,10 @@ end
 to ap-removenotrivals-and-first
   set new_choicelist []
   set new_choicelist add_to_list new_choicelist item 0 choicelist
-
-  show choicelist
   ifelse member? item 0 rivals_list new_choicelist = false and member? item 1 rivals_list new_choicelist = false[ ;;check if rival color not already first choice
   foreach choicelist [x ->
-    if x = item 0 rivals_list [set new_choicelist add_to_list new_choicelist item 0 rivals_list show new_choicelist set color item 0 rivals_list stop]
-    if x = item 1 rivals_list [set new_choicelist add_to_list new_choicelist item 1 rivals_list show new_choicelist set color item 1 rivals_list stop]]]
+    if x = item 0 rivals_list [set new_choicelist add_to_list new_choicelist item 0 rivals_list set color item 0 rivals_list stop]
+    if x = item 1 rivals_list [set new_choicelist add_to_list new_choicelist item 1 rivals_list set color item 1 rivals_list stop]]]
   ;; append the closest rival to the new choice list of the turtle
   [set color item 0 new_choicelist] ;;else change color to first choice
   ;set new_choicelist add_to_list new_choicelist item 1 rivals_list
@@ -335,7 +334,7 @@ kandidaten
 kandidaten
 10
 200
-118.0
+23.0
 1
 1
 NIL
@@ -367,7 +366,7 @@ amount_partyleaders
 amount_partyleaders
 1
 10
-5.0
+3.0
 1
 1
 NIL
