@@ -1,7 +1,6 @@
 turtles-own[partyleader choicelist radius finding
   new_choicelist ];for approval voting to get new choices
 
-
 globals[ counting colorlist chosencolor chosencolorlist convertedcolor found_color tempchoicelist ;General color registration variables
   winningpoints_index winning_party_colorcode winning_party electionslist ;General counting best party variables
   loserslist worstparty_index worseparty_candidates strategyvotingcandidaten;only for Plurality strategyvoting
@@ -9,9 +8,10 @@ globals[ counting colorlist chosencolor chosencolorlist convertedcolor found_col
   tempelectionslist tempchosencolorlist temp_amount_partyleader  ;temporary variables
   rivalspoints_list rivals_list] ;for get_rivals function
 
+
 to setup
   clear-all
-  create-turtles kandidaten + amount_partyleaders[
+  create-turtles voters + amount_partyleaders[
     set shape "circle"
     set size 0.5
     set color white
@@ -22,7 +22,7 @@ to setup
 
   ]
   createpartyleaders
-  giveturtles_choices ;;misschien in setup? of in Plurality_run?
+  giveturtles_choices
   reset-ticks
 end
 
@@ -81,7 +81,7 @@ to Approval_run
   if Approval_Choice = "one rival voting"[
 
     ask turtles with [ partyleader = -1 ] [set new_choicelist first choicelist set new_choicelist (list new_choicelist)]
-    set rivals_list get-rivals
+    set rivals_list ap-get_rivals
     ask turtles with [ partyleader = -1 ] [ ap-removenotrivals-and-first ]
     set electionslist countpointelections
     showelections
@@ -95,16 +95,21 @@ to Approval_run
 
 end
 
-to-report get-rivals
+
+to-report ap-get_rivals
   set rivalspoints_list []
   set rivals_list []
   set electionslist countpointelections
   set rivalspoints_list add_to_list rivalspoints_list max electionslist
-  set electionslist remove-item (position max electionslist electionslist) electionslist
+  set electionslist remove-item (position max electionslist electionslist) electionslist ;anti tie parties
   set rivalspoints_list add_to_list rivalspoints_list max electionslist
   set electionslist countpointelections
-
-  foreach rivalspoints_list [x -> set rivals_list add_to_list rivals_list item (position x electionslist) chosencolorlist ]
+  set tempelectionslist electionslist
+  set tempchosencolorlist chosencolorlist
+  foreach rivalspoints_list [x -> set rivals_list add_to_list rivals_list item (position x tempelectionslist) tempchosencolorlist
+    set tempchosencolorlist remove-item (position x tempelectionslist) tempchosencolorlist ;anti tie parties
+    set tempelectionslist remove-item (position x tempelectionslist) tempelectionslist ] ;anti tie parties
+  show rivals_list
   report rivals_list
 end
 
@@ -138,44 +143,10 @@ to pl-findsecondparty
   set color item 1 choicelist ;;get second choice
 end
 
-to-report countcolorelections
-  set electionslist []
-  set counting 0
-  foreach chosencolorlist [x -> ;;loopt de registreerde kleuren van partyleaders
-    ask turtles with [color = x] [set counting counting + 1] ;;telt de turtles met de loopende kleur in de variabele temp_counting
-    set electionslist add_to_list electionslist counting ;;en voegt het toe aan de list met de functie add_to_list
-    set counting 0 ] ;;reset de variabele om fouten te voorkomen
-  report electionslist
-end
-
-to-report countpointelections
-  set electionslist []
-  foreach chosencolorlist [set electionslist add_to_list electionslist 0]
-  ask turtles with [partyleader = -1]
-  ;                                                   replace item with "indexnumber" in electionlist to the item from the "indexnumber" in electionlist and add 1
-    [foreach new_choicelist [x -> set electionslist replace-item (position x chosencolorlist) electionslist (item (position x chosencolorlist) electionslist + 1) ]] ; ;change 1 to this
- report electionslist
-end
-
-to showelections
-  output-show "-------------------"
-  output-show "Pluratity Election result:"
-  (foreach chosencolorlist electionslist ;;loopt door de geregisteerde partyleaders' kleurenlist en de getelde kandidatenlist van functie countcolorelections
-    [ [a b] -> set convertedcolor "white" ;;zet default kleur op white
-      set convertedcolor convertnetlogocode a ;;zet de netlogokleurcode om in een tekst uit de functie convertnetlogocode
-      output-show word "Party: " list convertedcolor b ]) ;;print de party kleur en de hoeveelheid stemmen in een list om ze als 1 output te laten zien
- ; set winning_party getwinningparty ap_total_partyleader-points chosencolorlist
-  set convertedcolor getwinningparty electionslist chosencolorlist ;;krijg de winnende partij met de functie getwinningparty
-  output-show "Winning party:"
-  output-show convertedcolor ;; en print de gewonnen kleur
-end
-
-
-
 to pl-getworstparty
   set worseparty_candidates 0
   ;;getworstparty method 1: not enough votes
-  foreach electionslist [x -> if kandidaten * 0.1 > x [set worstparty_index position x electionslist ;;als de partij minder dan 10% van de stemmen heeft, dan is het een slechte partij
+  foreach electionslist [x -> if voters * 0.1 > x [set worstparty_index position x electionslist ;;als de partij minder dan 10% van de stemmen heeft, dan is het een slechte partij
   set loserslist add_to_list loserslist item worstparty_index chosencolorlist]] ;;loserslist houdt bij welke partijen slecht zijn
 
   ;;getworstparty method 2: general pick the worst party
@@ -211,6 +182,40 @@ to pl-chooseotherparty
   foreach choicelist [otherparty ->
       if member? otherparty loserslist = false [set color otherparty stop]] ;;loops through the choices from best to worst and if not a bad party in general (aka in loserslist) it chooses that party
 end
+
+
+to-report countcolorelections
+  set electionslist []
+  set counting 0
+  foreach chosencolorlist [x -> ;;loopt de registreerde kleuren van partyleaders
+    ask turtles with [color = x] [set counting counting + 1] ;;telt de turtles met de loopende kleur in de variabele temp_counting
+    set electionslist add_to_list electionslist counting ;;en voegt het toe aan de list met de functie add_to_list
+    set counting 0 ] ;;reset de variabele om fouten te voorkomen
+  report electionslist
+end
+
+to-report countpointelections
+  set electionslist []
+  foreach chosencolorlist [set electionslist add_to_list electionslist 0]
+  ask turtles with [partyleader = -1]
+  ;                                                   replace item with "indexnumber" in electionlist to the item from the "indexnumber" in electionlist and add 1
+    [foreach new_choicelist [x -> set electionslist replace-item (position x chosencolorlist) electionslist (item (position x chosencolorlist) electionslist + 1) ]] ; ;change 1 to this
+ report electionslist
+end
+
+to showelections
+  output-show "-------------------"
+  output-show "Pluratity Election result:"
+  (foreach chosencolorlist electionslist ;;loopt door de geregisteerde partyleaders' kleurenlist en de getelde kandidatenlist van functie countcolorelections
+    [ [a b] -> set convertedcolor "white" ;;zet default kleur op white
+      set convertedcolor convertnetlogocode a ;;zet de netlogokleurcode om in een tekst uit de functie convertnetlogocode
+      output-show word "Party: " list convertedcolor b ]) ;;print de party kleur en de hoeveelheid stemmen in een list om ze als 1 output te laten zien
+ ; set winning_party getwinningparty ap_total_partyleader-points chosencolorlist
+  set convertedcolor getwinningparty electionslist chosencolorlist ;;krijg de winnende partij met de functie getwinningparty
+  output-show "Winning party:"
+  output-show convertedcolor ;; en print de gewonnen kleur
+end
+
 
 to-report convertnetlogocode [a]
     if a = red [set convertedcolor "red"]
@@ -330,11 +335,11 @@ SLIDER
 33
 191
 66
-kandidaten
-kandidaten
+voters
+voters
 10
 200
-23.0
+158.0
 1
 1
 NIL
@@ -366,21 +371,11 @@ amount_partyleaders
 amount_partyleaders
 1
 10
-3.0
+8.0
 1
 1
 NIL
 HORIZONTAL
-
-TEXTBOX
-112
-200
-262
-256
-Per kandidaat stellen welke partij beter is om op te stemmen en zo hun vote te veranderen ap-firstandsecond
-11
-0.0
-1
 
 BUTTON
 261
@@ -407,7 +402,7 @@ CHOOSER
 Plurality_Choice
 Plurality_Choice
 "bestvoting" "secondbestvoting" "strategicvoting"
-2
+0
 
 BUTTON
 171
@@ -460,28 +455,36 @@ This model shows what the candidates will vote on the certain voting system and 
 
 ## HOW IT WORKS
 
-The agents are checking in their radius, which party's and candidaten are close. The agents will choose their party depending on these. The buttons show which way they choose
+The voters create a descending favorite party's list as a variabel when the setup button is pressed. This will be used to determine which party they will vote eventually.
 
 ## HOW TO USE IT
 
-To begin the model use, choose the amount of candidates which should be at least 4 so 3 of them can be a partyleader. After that click setup to place them on the world. It will show on the world that there are (white) candidates and a couple partyleaders.
-Then you can choose the buttons for votingsystem (row) and the way of voting (column), where 
-- pl means Plurity
-- ir means Instant Runoff 
-- ap means Approval. 
+To begin the model use, choose the amount of candidates and partyleaders. These are both limited to a certain number to reduce confusing about the simulation. After that click setup to place them on the world. It will show on the world that there are (white) candidates and a couple colored partyleaders.
+Then you see 2 sliders where each one indicate a voting system where if you open up the slider you can select a scenario. 
 
-The three ways of voting are firstparty, secondparty and strategicparty. 
-- Firstparty is just voting to the nearest party, 
-- secondparty is voting for the second closest
-- strategicparty is voting instead for the losing party to vote for the nearest winning party.
+If pressed the outcome will be shown in the output on the right. On top of the output there is a histogram which shows the amount of voters for each color. But since some colors have a similar color code it will be rounded and multiple colors will be added to each other, which makes it most of the time impossible to determine the winner. But it can be seen as a comparable to other colors and to immediately see which parties are winning or losing.
+
+The three scenarios of Plurality are "firstparty", "secondparty" and "strategicparty". 
+- Firstvoting is just voting to the nearest party, 
+- secondvoting is voting for the second closest
+- strategicvoting is voting for the nearest party, but when voting for the definite losing party, it will have a chance* to change it vote to the secondparty
+
+The two scenarios of Approval are "only not the worst" and "one rival voting".
+- only not the worst is voting for every party except the furthest (least agreeing with) party
+- one rival voting is voting for your own nearest party, but as well for one of the top 2 parties, to make sure that you have some agreeing with a winning party.
+
+
 
 ## THINGS TO NOTICE
 
-(suggested things for the user to notice while running the model)
+If anything happens with the buttons and simulation running, which has not occured yet, you can pressed one of the right bottom buttons. 
+The clearboard one can be used if the simulation is stuck determining a party for a voter. This will reset the chosen parties of all voters. 
+The giveturtles_choices one can be used if the setup button is pressed but can not determine the choices for some voters. This will most likely call an error when a scenario is runned. The giveturtles_choices button determines the choices again without changes the position of the voters and partyleaders.
+
 
 ## THINGS TO TRY
+The most important scenarios are the strategicvoting and the one rival voting. Strategicvoting will most likely be the real world and can easily determine the winner since most countries use plurality and some voters hesistate, if voting for the best agreeing party is better instead of voting for a more popular but less agreeing party, the real best counterpart of this system is the one rival voting from the system approval, where it determine which one of the best party will win, which will give sometimes different results compared the plurality system, which means that one of the systems is not working correctly.....
 
-(suggested things for the user to try to do (move sliders, switches, etc.) with the model)
 
 ## EXTENDING THE MODEL
 
