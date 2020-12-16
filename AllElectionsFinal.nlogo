@@ -2,15 +2,18 @@ turtles-own[partyleader choicelist radius finding
   new_choicelist ];for approval voting to get new choices
 
 globals[ counting colorlist chosencolor chosencolorlist convertedcolor found_color tempchoicelist ;General color registration variables
-  winningpoints_index winning_party_colorcode winning_party electionslist ;General counting best party variables
+  winningpoints_index winning_party_colorcode winning_party electionslist dissatisfaction;General counting best party variables
   loserslist worstparty_index worseparty_candidates strategyvotingcandidaten;only for Plurality strategyvoting
   ap_partyleader-points ;only Approval voting
   tempelectionslist tempchosencolorlist temp_amount_partyleader  ;temporary variables
-  rivalspoints_list rivals_list] ;for get_rivals function
+  rivalspoints_list rivals_list ;for get_rivals function
+  avg-pl-dissatisfaction avg-ap-dissatisfaction systemcounting pl-winningparty ap-winningparty pl-dissatisfaction ap-dissatisfaction votingsystemsscore ;for comparingvotingsystemsscore
+]
 
 
 to setup
-  clear-all
+  ;; creates turtles and world
+  clear-turtles
   create-turtles voters + amount_partyleaders[
     set shape "circle"
     set size 0.5
@@ -27,6 +30,7 @@ to setup
 end
 
 to createpartyleaders
+  ;; creates partyleaders
   set temp_amount_partyleader amount_partyleaders
   set colorlist [red orange brown yellow green turquoise cyan sky blue violet magenta pink]
 
@@ -38,15 +42,17 @@ to createpartyleaders
     ask one-of turtles with [partyleader = -1] [set color chosencolor set partyleader temp_amount_partyleader set size 2]
 
     set temp_amount_partyleader temp_amount_partyleader - 1
-    if temp_amount_partyleader = 0 [show chosencolorlist stop ]
+    if temp_amount_partyleader = 0 [stop ]
   ]
 end
 
 to giveturtles_choices
+  ;; asks all non party leaders to choose
   ask turtles with [ partyleader = -1 ] [ getchoices ]
 end
 
-to getchoices ;;zet voor elke kandidaat een keuze list voor de dichtbijzijnste partijleaders
+to getchoices
+  ;;zet voor elke kandidaat een keuze list voor de dichtbijzijnste partijleaders
   set choicelist []
   set radius 0
   set finding 1
@@ -61,6 +67,7 @@ end
 
 
 to Plurality_run
+  ;; runs the plurality voting system
   clearboard
   set loserslist [white]
   if Plurality_Choice = "bestvoting" [
@@ -77,6 +84,7 @@ to Plurality_run
 end
 
 to Approval_run
+  ;; runs the approval voting system
   clearboard
   if Approval_Choice = "one rival voting"[
 
@@ -95,8 +103,42 @@ to Approval_run
 
 end
 
+to Compare_Votingsystems
+  ;; compares the votings systems
+  set votingsystemsscore [0 0 0]
+  set systemcounting 0
+  loop[
+  setup
+  Plurality_run
+  set pl-winningparty winning_party;; saves the winningparty result in variable
+  set pl-dissatisfaction dissatisfaction ;; saves the dissatisfaction result in variable
+  Approval_run
+  set pl-winningparty winning_party ;; saves the winningparty result in variable
+  set ap-dissatisfaction dissatisfaction ;; saves the dissatisfaction result in variable
+  set avg-pl-dissatisfaction avg-pl-dissatisfaction + pl-dissatisfaction ;calculate the total avg-pl-dissatisfaction
+  set avg-ap-dissatisfaction avg-ap-dissatisfaction + ap-dissatisfaction ;calculate the total avg-ap-dissatisfaction
+  show pl-dissatisfaction
+  show ap-dissatisfaction
+  ifelse pl-dissatisfaction != ap-dissatisfaction ;; updates the scoreboard
+      [ifelse pl-dissatisfaction > ap-dissatisfaction
+        [set votingsystemsscore replace-item 1 votingsystemsscore (item 1 votingsystemsscore + 1) show "AP wins"]
+        [set votingsystemsscore replace-item 0 votingsystemsscore (item 0 votingsystemsscore + 1) show "PL wins"]]
+      [set votingsystemsscore replace-item 2 votingsystemsscore (item 2 votingsystemsscore + 1) show "Tied"]
+
+  show votingsystemsscore
+  set systemcounting systemcounting + 1
+    if systemcounting = 100 [output-show votingsystemsscore  ifelse item 0 votingsystemsscore  = item 1 votingsystemsscore
+      [ output-show "Score Tied "]
+      [ifelse position max votingsystemsscore votingsystemsscore = 1 [output-show "approval has less dissatisfaction "][output-show "plurality has less dissatisfaction "]]
+      set avg-pl-dissatisfaction avg-pl-dissatisfaction / 100
+      set avg-ap-dissatisfaction avg-ap-dissatisfaction / 100
+      stop ]
+  ]
+
+end
 
 to-report ap-get_rivals
+  ;; gets the top 2 party and puts them in a list
   set rivalspoints_list []
   set rivals_list []
   set electionslist countpointelections
@@ -109,17 +151,18 @@ to-report ap-get_rivals
   foreach rivalspoints_list [x -> set rivals_list add_to_list rivals_list item (position x tempelectionslist) tempchosencolorlist
     set tempchosencolorlist remove-item (position x tempelectionslist) tempchosencolorlist ;anti tie parties
     set tempelectionslist remove-item (position x tempelectionslist) tempelectionslist ] ;anti tie parties
-  show rivals_list
   report rivals_list
 end
 
 to ap-removefarthestparty
+  ;; remove farthestparty from the choicelists of the turtle (left under turtle deletes right above party in their choices)
   set new_choicelist choicelist
   set new_choicelist remove 0 new_choicelist ;; if choicelist got a zero somehow
   set new_choicelist remove last new_choicelist new_choicelist ;remove last choice
 end
 
 to ap-removenotrivals-and-first
+  ;;removes none rivals and least favorit party so the turtle only has his own party and his favorite rival party
   set new_choicelist []
   set new_choicelist add_to_list new_choicelist item 0 choicelist
   ifelse member? item 0 rivals_list new_choicelist = false and member? item 1 rivals_list new_choicelist = false[ ;;check if rival color not already first choice
@@ -167,9 +210,7 @@ to pl-getworstparty
 end
 
 to pl-worstparty_change?
-  show worseparty_candidates
   set strategyvotingcandidaten round(0.1 * worseparty_candidates)
-  show strategyvotingcandidaten
   loop [
     ask one-of turtles with [member? color loserslist = true and partyleader = -1] [pl-chooseotherparty set strategyvotingcandidaten strategyvotingcandidaten - 1]
     ; only let x% (30) choose other party
@@ -204,16 +245,21 @@ to-report countpointelections
 end
 
 to showelections
+  set dissatisfaction 0
   output-show "-------------------"
-  output-show "Pluratity Election result:"
+  output-show "Election result:"
   (foreach chosencolorlist electionslist ;;loopt door de geregisteerde partyleaders' kleurenlist en de getelde kandidatenlist van functie countcolorelections
     [ [a b] -> set convertedcolor "white" ;;zet default kleur op white
       set convertedcolor convertnetlogocode a ;;zet de netlogokleurcode om in een tekst uit de functie convertnetlogocode
       output-show word "Party: " list convertedcolor b ]) ;;print de party kleur en de hoeveelheid stemmen in een list om ze als 1 output te laten zien
  ; set winning_party getwinningparty ap_total_partyleader-points chosencolorlist
+ ;
+
   set convertedcolor getwinningparty electionslist chosencolorlist ;;krijg de winnende partij met de functie getwinningparty
   output-show "Winning party:"
   output-show convertedcolor ;; en print de gewonnen kleur
+  output-show "dissatisfaction:"
+  output-show dissatisfaction ;; en print de gewonnen kleur
 end
 
 
@@ -241,8 +287,10 @@ to-report add_to_list [a_list addons]
 end
 
 to-report getwinningparty[pointslist partylist]
+
   set winningpoints_index position max pointslist pointslist
   set winning_party_colorcode item winningpoints_index partylist
+  ask turtles with [partyleader = -1] [set dissatisfaction dissatisfaction + position winning_party_colorcode choicelist]
   set winning_party convertnetlogocode winning_party_colorcode
   report winning_party
 end
@@ -339,7 +387,7 @@ voters
 voters
 10
 200
-158.0
+200.0
 1
 1
 NIL
@@ -371,7 +419,7 @@ amount_partyleaders
 amount_partyleaders
 1
 10
-8.0
+6.0
 1
 1
 NIL
@@ -402,7 +450,7 @@ CHOOSER
 Plurality_Choice
 Plurality_Choice
 "bestvoting" "secondbestvoting" "strategicvoting"
-0
+2
 
 BUTTON
 171
@@ -446,7 +494,24 @@ CHOOSER
 Approval_Choice
 Approval_Choice
 "one rival voting" "only not the worst"
-0
+1
+
+BUTTON
+15
+183
+235
+216
+Compare Votingsystems 100 times
+Compare_Votingsystems
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
