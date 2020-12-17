@@ -132,6 +132,8 @@ to Compare_Votingsystems
       [ifelse position max votingsystemsscore votingsystemsscore = 1 [output-show "approval has less dissatisfaction "][output-show "plurality has less dissatisfaction "]]
       set avg-pl-dissatisfaction avg-pl-dissatisfaction / 100
       set avg-ap-dissatisfaction avg-ap-dissatisfaction / 100
+      show avg-ap-dissatisfaction
+      show avg-pl-dissatisfaction
       stop ]
   ]
 
@@ -447,7 +449,7 @@ CHOOSER
 Plurality_Choice
 Plurality_Choice
 "bestvoting" "secondbestvoting" "strategicvoting"
-2
+0
 
 BUTTON
 171
@@ -491,7 +493,7 @@ CHOOSER
 Approval_Choice
 Approval_Choice
 "one rival voting" "only not the worst"
-1
+0
 
 BUTTON
 15
