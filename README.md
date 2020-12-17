@@ -3,4 +3,5 @@
 
 Allelectionsfinal.nlogo is het simulatie bestand uitgevoerd in netlogo.  
 SimToolGroep3FinalAssignment.pdf is een word document en de documentatie.  
-SimulationToolingGroep3PvA.pdf is een word document en de plan van aanpak voor het simuleren en programeren.  
+SimulationToolingGroep3PvA.pdf is een word document en de plan van aanpak voor het simuleren en programeren.    
+ProjectGroep3-VotingSystemSimulation.pdf is een pp document en de presentatie
