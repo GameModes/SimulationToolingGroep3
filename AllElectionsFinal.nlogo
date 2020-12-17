@@ -205,18 +205,16 @@ to pl-getworstparty
       set loserslist add_to_list loserslist item worstparty_index chosencolorlist]]
 
   ask turtles with [member? color loserslist = true and partyleader = -1] [set worseparty_candidates worseparty_candidates + 1] ;;alle kandidaten die een slechte partij gekozen hebben worden geteld
-  ;(add above if only percentage wants to change vote)
   pl-worstparty_change?
 end
 
 to pl-worstparty_change?
-  set strategyvotingcandidaten round(0.1 * worseparty_candidates)
+  set strategyvotingcandidaten round(0.1 * worseparty_candidates) ; only let x% (10) choose other party
   loop [
     ask one-of turtles with [member? color loserslist = true and partyleader = -1] [pl-chooseotherparty set strategyvotingcandidaten strategyvotingcandidaten - 1]
-    ; only let x% (30) choose other party
     if strategyvotingcandidaten < 1 [stop]
   ]
-  ;foreach loserslist [worstcolor -> ask one-of turtles with [color = worstcolor and partyleader = -1] [pl-findfirstparty]] ;the remainder chooses the same party
+
 end
 
 to pl-chooseotherparty
@@ -252,8 +250,7 @@ to showelections
     [ [a b] -> set convertedcolor "white" ;;zet default kleur op white
       set convertedcolor convertnetlogocode a ;;zet de netlogokleurcode om in een tekst uit de functie convertnetlogocode
       output-show word "Party: " list convertedcolor b ]) ;;print de party kleur en de hoeveelheid stemmen in een list om ze als 1 output te laten zien
- ; set winning_party getwinningparty ap_total_partyleader-points chosencolorlist
- ;
+
 
   set convertedcolor getwinningparty electionslist chosencolorlist ;;krijg de winnende partij met de functie getwinningparty
   output-show "Winning party:"
@@ -548,24 +545,27 @@ The giveturtles_choices one can be used if the setup button is pressed but can n
 
 
 ## THINGS TO TRY
-The most important scenarios are the strategicvoting and the one rival voting. Strategicvoting will most likely be the real world and can easily determine the winner since most countries use plurality and some voters hesistate, if voting for the best agreeing party is better instead of voting for a more popular but less agreeing party, the real best counterpart of this system is the one rival voting from the system approval, where it determine which one of the best party will win, which will give sometimes different results compared the plurality system, which means that one of the systems is not working correctly.....
+The most important scenarios are the strategicvoting(PL) and the one rival voting(AP). Strategicvoting will most likely be the real world and can easily determine the winner since most countries use plurality and some voters hesistate, e.g. if voting for the best agreeing party is less impactable instead of voting for a more popular but less agreeing party, the real best counterpart of this system is, the one rival voting from the system approval, where it determine which one of the best party will win, which will give sometimes different results compared the plurality system, which means that one of the systems is not working correctly..... To calculate which voting system does better/worse they are a variable calculate dissatisfaction, the less the party has the better. The button "Compare voting system 100 times" will use this to calculate the best one. During this comparing you will have to wait a couple of minutes. The calculation and the current score of the systems will be shown in the show-bar (not the output). Eventually the result and thus the winner, will be shown in the output bar as: "Approval has less dissaffection" or "Plurality has less dissaffection".
 
 
 ## EXTENDING THE MODEL
 
-(suggested things to add or change in the Code tab to make the model more complicated, detailed, accurate, etc.)
+You can always add a new scenario. You simply have to add the string to the chooser and add it to the function it calls to, e.g. if you want to add an extra Plurality scenario, then add it in "Plurality_run". But the result of the scenario must be calculatable with the functions: "Showpointelections" or "Showcolorelections". Or else the compare function won't work
 
 ## NETLOGO FEATURES
+Unusual parts during coding:
 
-(interesting or unusual features of NetLogo that the model uses, particularly in the Code tab; or where workarounds were needed for missing features)
+- If you want to delete a code or replace it, use the find button on the upper left, this will simply help you find your word and even replace it for you.
 
-## RELATED MODELS
+- If you select a code and delete it, your mouse is in selection mode and will select everything it goes towards. Don't press the delete button while you are in this mode! Luckily you have an undo button.
 
-(models in the NetLogo Models Library and elsewhere which are of related interest)
+- The randomness of the turtles are really handy to use, but sometimes some turtles are on the exact places, which will be only shown to the world as 1 turtle. It's sometimes hard to count the turtles with the hand if some are not shown. Luckily I use a turtle calculator.
+
+- This code has some report functions. Use these because these are very handy and will help because of the sometimes bad way of doing and creating code in netlogo. E.g. adding something to a list requires an index, but if the list is empty you can't add it, but you need to replace the entire list, the function "Add to list" will help you with this. 
+
 
 ## CREDITS AND REFERENCES
-
-(a reference to the model's URL on the web if it has one, as well as any other necessary credits, citations, and links)
+GameMods, Brorros and Koen
 @#$#@#$#@
 default
 true
